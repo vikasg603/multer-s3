@@ -204,11 +204,23 @@ function S3Storage(opts) {
     case "object":
       this.getTransforms = opts.transforms;
       break;
+    case "function":
+      var transformsFromFunction = opts.transforms();
+      switch (typeof transformsFromFunction) {
+        case "object":
+          this.getTransforms = transformsFromFunction;
+          break;
+        case "undefined":
+          this.getTransforms = defaultTransforms;
+          break;
+        default:
+          throw new TypeError("Expected opts.transforms() to be undefined or object");
+      }
     case "undefined":
       this.getTransforms = defaultTransforms;
       break;
     default:
-      throw new TypeError("Expected opts.transforms to be undefined or object");
+      throw new TypeError("Expected opts.transforms to be undefined or object or function");
   }
 
   this.getTransforms.map(function (transform, i) {
