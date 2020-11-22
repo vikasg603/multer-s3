@@ -300,7 +300,7 @@ describe("Multer S3", function () {
               cb(null, new stream.PassThrough());
             },
           },
-        ],
+        ];
       }
     });
     var upload = multer({ storage: storage });
