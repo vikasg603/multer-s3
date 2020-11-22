@@ -277,4 +277,55 @@ describe("Multer S3", function () {
       done();
     });
   });
+  
+  it("upload transformed files With Custom Function", function (done) {
+    var s3 = mockS3();
+    var form = new FormData();
+    var storage = multerS3({
+      s3: s3,
+      bucket: "test",
+      shouldTransform: true,
+      transforms: () => {
+        const KeyName = "test";
+        return [
+          {
+            key: KeyName,
+            transform: function (req, file, cb) {
+              cb(null, new stream.PassThrough());
+            },
+          },
+          {
+            key: KeyName + "2",
+            transform: function (req, file, cb) {
+              cb(null, new stream.PassThrough());
+            },
+          },
+        ];
+      }
+    });
+    var upload = multer({ storage: storage });
+    var parser = upload.single("image");
+    var image = fs.createReadStream(
+      path.join(__dirname, "files", "ffffff.png")
+    );
+
+    form.append("name", "Multer");
+    form.append("image", image);
+
+    submitForm(parser, form, function (err, req) {
+      assert.ifError(err);
+
+      assert.equal(req.body.name, "Multer");
+      assert.equal(req.file.fieldname, "image");
+      assert.equal(req.file.originalname, "ffffff.png");
+      assert.equal(req.file.transforms[0].size, 68);
+      assert.equal(req.file.transforms[0].bucket, "test");
+      assert.equal(req.file.transforms[0].key, "test");
+      assert.equal(req.file.transforms[0].etag, "mock-etag");
+      assert.equal(req.file.transforms[0].location, "mock-location");
+      assert.equal(req.file.transforms[1].key, "test2");
+
+      done();
+    });
+  });
 });
